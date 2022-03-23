@@ -54,7 +54,7 @@ ORDER BY 2 DESC
 Limit 1
 
 /**     Q: Which team has the most draw matches ?*/
-
+/** First Solution*/
 SELECT home_team AS Team, (T1.number_of_draws_as_home+T2.number_of_draws_as_away) AS Total_number_of_draws
 FROM
 (SELECT home_team, Count (*) AS number_of_draws_as_home
@@ -69,6 +69,30 @@ Where Draw = 'TRUE'
 GROUP BY 1
 ORDER BY 2 DESC) AS T2
 ON T1.home_team = T2.away_team
+GROUP BY 1,2
+ORDER BY 2 DESC
+LIMIT 1
+
+/** Second Solution*/
+/** Step 1*/
+CREATE VIEW home_draw AS
+SELECT home_team, Count (*) AS number_of_draws_as_home
+FROM results
+Where Draw = 'TRUE'
+GROUP BY 1
+ORDER BY 2 DESC
+/** Step 2*/
+CREATE VIEW away_draw AS
+SELECT away_team, Count (*) number_of_draws_as_away
+FROM results
+Where Draw = 'TRUE'
+GROUP BY 1
+ORDER BY 2 DESC
+/** Step 3*/
+SELECT home_team AS Team, (home_draw.number_of_draws_as_home+away_draw.number_of_draws_as_away) AS Total_number_of_draws
+FROM home_draw
+JOIN away_draw
+ON home_draw.home_team = away_draw.away_team
 GROUP BY 1,2
 ORDER BY 2 DESC
 LIMIT 1
@@ -182,4 +206,73 @@ ORDER BY 2 DESC) AS T2
 ON T1.Away_Team_Neutral_Land = T2.Away_Team_Away_Land
 GROUP BY 1,2,3
 ORDER BY 3 DESC) AS T3
+LIMIT 1
+
+/** Q: What is the average score in the history?*/
+Select T1.Total_goals/T1.Total_matches
+FROM
+(Select Count(*) AS Total_matches, (Sum(home_score)+Sum(away_score)) AS Total_goals
+FROM Results) AS T1
+/** Q: What is the team with highest average?*/
+Create View T1 AS
+Select Home_team, Count(*) AS Total_matches, (Sum(home_score)) AS Total_goals_home
+FROM Results
+GROUP BY 1
+ORDER BY  2 DESC
+Create View T2 AS
+Select away_team, Count(*) AS Total_matches, (Sum(away_score)) AS Total_goals_away
+FROM Results
+GROUP BY 1
+ORDER BY  2 DESC
+Select T1.home_team, T2.away_team,
+(T1.total_goals_home+T2.total_goals_away) AS Total_goals,
+(T1.total_matches+T2.total_matches) AS total_matches,
+((T1.total_goals_home+T2.total_goals_away)/(T1.total_matches+T2.total_matches)) AS Average_Goals
+FROM T1
+JOIN T2
+ON T1.home_team = T2.away_team
+GROUP BY 1,2,3,4
+ORDER BY  5 DESC
+LIMIT 1
+/** Q: What is the team with lowest average?*/
+Create View T1 AS
+Select Home_team, Count(*) AS Total_matches, (Sum(home_score)) AS Total_goals_home
+FROM Results
+GROUP BY 1
+ORDER BY  2 DESC
+Create View T2 AS
+Select away_team, Count(*) AS Total_matches, (Sum(away_score)) AS Total_goals_away
+FROM Results
+GROUP BY 1
+ORDER BY  2 DESC
+Select T1.home_team, T2.away_team,
+(T1.total_goals_home+T2.total_goals_away) AS Total_goals,
+(T1.total_matches+T2.total_matches) AS total_matches,
+((T1.total_goals_home+T2.total_goals_away)/(T1.total_matches+T2.total_matches)) AS Average_Goals
+FROM T1
+JOIN T2
+ON T1.home_team = T2.away_team
+GROUP BY 1,2,3,4
+ORDER BY  5 
+LIMIT 1
+/** Q: What is the most team played matches in the history?*/
+
+Create view home_team_matches AS
+Select Home_Team, count(home_team) AS Home_play
+From Results
+GROUP BY 1
+ORDER BY 2 DESC
+
+Create view away_team_matches AS
+Select away_Team, count(away_team) AS Away_play
+From Results
+GROUP BY 1
+ORDER BY 2 DESC
+
+Select home_team_matches.home_team, away_team_matches.away_team, (home_team_matches.Home_play + away_team_matches.Away_play) AS total_matches
+From home_team_matches
+JOIN away_team_matches
+ON home_team_matches.home_team = away_team_matches.away_Team
+GROUP BY 1,2,3
+ORDER BY 3 DESC
 LIMIT 1
